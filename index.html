@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NBA — Neural Bus Architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600&family=Outfit:wght@200;400;600;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0b0f;
+  --surface: #12131a;
+  --surface2: #1a1b25;
+  --border: #2a2b3a;
+  --accent: #6366f1;
+  --accent2: #818cf8;
+  --accent-glow: rgba(99,102,241,0.15);
+  --green: #34d399;
+  --text: #e2e8f0;
+  --text2: #94a3b8;
+  --text3: #64748b;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Outfit', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Animated background */
+body::before {
+  content: '';
+  position: fixed;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(ellipse at 30% 20%, rgba(99,102,241,0.06) 0%, transparent 50%),
+              radial-gradient(ellipse at 70% 80%, rgba(52,211,153,0.04) 0%, transparent 50%);
+  animation: bgFloat 20s ease-in-out infinite;
+  z-index: -1;
+}
+
+@keyframes bgFloat {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  50% { transform: translate(-2%, -2%) rotate(1deg); }
+}
+
+/* Header */
+.header {
+  padding: 40px 60px 30px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.logo-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--accent), #a78bfa);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  box-shadow: 0 0 30px var(--accent-glow);
+}
+
+.logo h1 {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+}
+
+.logo p {
+  font-size: 13px;
+  color: var(--text3);
+  font-weight: 300;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(52,211,153,0.08);
+  border: 1px solid rgba(52,211,153,0.2);
+  border-radius: 100px;
+  font-size: 13px;
+  color: var(--green);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--green);
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(52,211,153,0.4); }
+  50% { opacity: 0.8; box-shadow: 0 0 0 6px rgba(52,211,153,0); }
+}
+
+/* Main layout */
+.main {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  min-height: calc(100vh - 120px);
+}
+
+/* Left panel - Input */
+.panel {
+  padding: 40px;
+  border-right: 1px solid var(--border);
+}
+
+.panel-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--text3);
+  margin-bottom: 24px;
+  font-weight: 600;
+}
+
+textarea {
+  width: 100%;
+  height: 160px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  resize: none;
+  outline: none;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+textarea::placeholder { color: var(--text3); }
+
+/* Image upload */
+.upload-zone {
+  margin-top: 16px;
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  padding: 30px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+
+.upload-zone:hover {
+  border-color: var(--accent);
+  background: var(--accent-glow);
+}
+
+.upload-zone.has-image {
+  border-style: solid;
+  border-color: var(--accent);
+  padding: 10px;
+}
+
+.upload-zone img {
+  max-width: 100%;
+  max-height: 200px;
+  border-radius: 8px;
+}
+
+.upload-icon { font-size: 28px; margin-bottom: 8px; }
+.upload-text { color: var(--text3); font-size: 13px; }
+.upload-text span { color: var(--accent2); }
+
+input[type="file"] { display: none; }
+
+/* Send button */
+.send-btn {
+  margin-top: 20px;
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, var(--accent), #7c3aed);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  letter-spacing: 0.5px;
+  position: relative;
+  overflow: hidden;
+}
+
+.send-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(99,102,241,0.3);
+}
+
+.send-btn:active { transform: translateY(0); }
+
+.send-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.send-btn .spinner {
+  display: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Right panel - Output */
+.output-panel { padding: 40px; }
+
+.strategy-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.strategy-chip {
+  padding: 6px 14px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  border: 1px solid var(--border);
+  color: var(--text3);
+  background: var(--surface);
+  transition: all 0.3s;
+}
+
+.strategy-chip.active {
+  border-color: var(--accent);
+  color: var(--accent2);
+  background: var(--accent-glow);
+}
+
+.response-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  min-height: 300px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--text2);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-y: auto;
+  max-height: 500px;
+}
+
+.response-box.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text3);
+  font-family: 'Outfit', sans-serif;
+  font-size: 14px;
+}
+
+/* DNA params display */
+.dna-params {
+  margin-top: 16px;
+  display: flex;
+  gap: 12px;
+}
+
+.dna-param {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  text-align: center;
+}
+
+.dna-param label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text3);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.dna-param value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--accent2);
+  display: block;
+}
+
+/* Footer architecture diagram */
+.arch-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 12px 60px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+  font-size: 11px;
+  color: var(--text3);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.arch-node {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.arch-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.arch-arrow { color: var(--text3); font-size: 16px; }
+
+/* Responsive */
+@media (max-width: 900px) {
+  .main { grid-template-columns: 1fr; }
+  .panel { border-right: none; border-bottom: 1px solid var(--border); }
+  .header { padding: 24px 24px 20px; }
+  .panel, .output-panel { padding: 24px; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">N</div>
+    <div>
+      <h1>Neural Bus Architecture</h1>
+      <p>Multi-Agent AI Orchestration</p>
+    </div>
+  </div>
+  <div class="status">
+    <div class="status-dot"></div>
+    System Ready
+  </div>
+</div>
+
+<div class="main">
+  <div class="panel">
+    <div class="panel-title">Input</div>
+    <textarea id="prompt" placeholder="Ask anything... The system will route to the best AI capability."></textarea>
+
+    <div class="upload-zone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+      <div class="upload-icon">🖼</div>
+      <div class="upload-text">Drop image or <span>browse</span></div>
+    </div>
+    <input type="file" id="fileInput" accept="image/*">
+
+    <button class="send-btn" id="sendBtn" onclick="generate()">
+      <span class="btn-text">Generate</span>
+      <div class="spinner"></div>
+    </button>
+  </div>
+
+  <div class="output-panel">
+    <div class="panel-title">Response</div>
+
+    <div class="strategy-bar">
+      <div class="strategy-chip" id="chip-coder">coder_only</div>
+      <div class="strategy-chip" id="chip-vl">vl_only</div>
+      <div class="strategy-chip" id="chip-both">both</div>
+      <div class="strategy-chip" id="chip-seq">sequential</div>
+    </div>
+
+    <div class="response-box empty" id="response">
+      Response will appear here
+    </div>
+
+    <div class="dna-params">
+      <div class="dna-param">
+        <label>Temperature</label>
+        <value id="val-temp">—</value>
+      </div>
+      <div class="dna-param">
+        <label>Top P</label>
+        <value id="val-topp">—</value>
+      </div>
+      <div class="dna-param">
+        <label>Rep Penalty</label>
+        <value id="val-rep">—</value>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="arch-bar">
+  <div class="arch-node"><div class="arch-dot"></div> Hooks</div>
+  <div class="arch-arrow">→</div>
+  <div class="arch-node"><div class="arch-dot" style="background:var(--green)"></div> DNA</div>
+  <div class="arch-arrow">→</div>
+  <div class="arch-node"><div class="arch-dot" style="background:#f59e0b"></div> Router</div>
+  <div class="arch-arrow">→</div>
+  <div class="arch-node"><div class="arch-dot" style="background:#ec4899"></div> Generate</div>
+</div>
+
+<script>
+const API = 'http://localhost:8000';
+let selectedFile = null;
+
+// File upload handling
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+
+fileInput.addEventListener('change', (e) => {
+  if (e.target.files[0]) {
+    selectedFile = e.target.files[0];
+    showPreview(selectedFile);
+  }
+});
+
+dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.style.borderColor = 'var(--accent)'; });
+dropzone.addEventListener('dragleave', () => { if(!selectedFile) dropzone.style.borderColor = ''; });
+dropzone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  if (e.dataTransfer.files[0]) {
+    selectedFile = e.dataTransfer.files[0];
+    fileInput.files = e.dataTransfer.files;
+    showPreview(selectedFile);
+  }
+});
+
+function showPreview(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    dropzone.innerHTML = `<img src="${e.target.result}" alt="preview">`;
+    dropzone.classList.add('has-image');
+  };
+  reader.readAsDataURL(file);
+}
+
+// Generate
+async function generate() {
+  const prompt = document.getElementById('prompt').value.trim();
+  if (!prompt) return;
+
+  const btn = document.getElementById('sendBtn');
+  const responseBox = document.getElementById('response');
+
+  btn.disabled = true;
+  btn.querySelector('.btn-text').style.display = 'none';
+  btn.querySelector('.spinner').style.display = 'block';
+  responseBox.className = 'response-box empty';
+  responseBox.textContent = 'Thinking...';
+
+  try {
+    let data;
+
+    if (selectedFile) {
+      const formData = new FormData();
+      formData.append('prompt', prompt);
+      formData.append('image', selectedFile);
+      formData.append('max_tokens', '1024');
+
+      const res = await fetch(`${API}/generate-image`, { method: 'POST', body: formData });
+      data = await res.json();
+    } else {
+      const res = await fetch(`${API}/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, max_tokens: 1024 }),
+      });
+      data = await res.json();
+    }
+
+    // Show response
+    responseBox.className = 'response-box';
+    responseBox.textContent = data.response;
+
+    // Highlight active strategy
+    document.querySelectorAll('.strategy-chip').forEach(c => c.classList.remove('active'));
+    const strategyMap = {
+      'coder_only': 'chip-coder',
+      'vl_only': 'chip-vl',
+      'both': 'chip-both',
+      'sequential': 'chip-seq',
+    };
+    const chipId = strategyMap[data.strategy];
+    if (chipId) document.getElementById(chipId).classList.add('active');
+
+    // DNA params
+    if (data.gen_params) {
+      document.getElementById('val-temp').textContent = (data.gen_params.temperature || 0.7).toFixed(2);
+      document.getElementById('val-topp').textContent = (data.gen_params.top_p || 0.9).toFixed(2);
+      document.getElementById('val-rep').textContent = (data.gen_params.repetition_penalty || 1.0).toFixed(2);
+    }
+
+  } catch (err) {
+    responseBox.className = 'response-box';
+    responseBox.textContent = 'Error: ' + err.message + '\n\nMake sure nba_server.py is running.';
+  }
+
+  btn.disabled = false;
+  btn.querySelector('.btn-text').style.display = '';
+  btn.querySelector('.spinner').style.display = 'none';
+}
+
+// Enter to send
+document.getElementById('prompt').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); generate(); }
+});
+</script>
+
+</body>
+</html>
